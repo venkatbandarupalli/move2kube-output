@@ -1,0 +1,36 @@
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+    annotations:
+        move2kube.service.expose: "true"
+    creationTimestamp: null
+    labels:
+        io.move2kube.service: redis
+    name: redis
+spec:
+    replicas: {{ index .Values "common" "replicas" }}
+    selector:
+        matchLabels:
+            io.move2kube.service: redis
+    strategy: {}
+    template:
+        metadata:
+            annotations:
+                move2kube.service.expose: "true"
+            creationTimestamp: null
+            labels:
+                io.move2kube.service: redis
+            name: redis
+        spec:
+            containers:
+                - image: redis
+                  imagePullPolicy: Always
+                  name: redis
+                  resources: {}
+            restartPolicy: Always
+            securityContext: {}
+status: {}
+
+...

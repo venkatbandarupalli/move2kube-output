@@ -1,0 +1,209 @@
+apiVersion: template.openshift.io/v1
+kind: Template
+metadata:
+  name: move2kube-demos-template
+  generatename: ""
+  namespace: ""
+  selflink: ""
+  uid: ""
+  resourceversion: ""
+  generation: 0
+  creationtimestamp: "0001-01-01T00:00:00Z"
+  deletiontimestamp: null
+  deletiongraceperiodseconds: null
+  labels: {}
+  annotations: {}
+  ownerreferences: []
+  finalizers: []
+  clustername: ""
+  managedfields: []
+objects:
+  - apiVersion: v1
+    kind: Service
+    metadata:
+      annotations:
+        move2kube.service.expose: "true"
+      creationTimestamp: null
+      labels:
+        io.move2kube.service: api
+      name: api
+    spec:
+      ports:
+        - name: "80"
+          port: 80
+          targetPort: 1234
+      selector:
+        io.move2kube.service: api
+      type: ClusterIP
+    status:
+      loadBalancer: {}
+  - apiVersion: apps/v1
+    kind: Deployment
+    metadata:
+      annotations:
+        move2kube.service.expose: "true"
+      creationTimestamp: null
+      labels:
+        io.move2kube.service: redis
+      name: redis
+    spec:
+      replicas: ${{COMMON_REPLICAS}}
+      selector:
+        matchLabels:
+          io.move2kube.service: redis
+      strategy: {}
+      template:
+        metadata:
+          annotations:
+            move2kube.service.expose: "true"
+          creationTimestamp: null
+          labels:
+            io.move2kube.service: redis
+          name: redis
+        spec:
+          containers:
+            - image: redis
+              imagePullPolicy: Always
+              name: redis
+              resources: {}
+          restartPolicy: Always
+          securityContext: {}
+    status: {}
+  - apiVersion: v1
+    kind: Service
+    metadata:
+      annotations:
+        move2kube.service.expose: "true"
+      creationTimestamp: null
+      labels:
+        io.move2kube.service: redis
+      name: redis
+    spec:
+      clusterIP: None
+      ports:
+        - name: headless
+          port: 55555
+          targetPort: 0
+      selector:
+        io.move2kube.service: redis
+      type: ClusterIP
+    status:
+      loadBalancer: {}
+  - apiVersion: apps/v1
+    kind: Deployment
+    metadata:
+      annotations:
+        move2kube.service.expose: "true"
+      creationTimestamp: null
+      labels:
+        io.move2kube.service: web
+      name: web
+    spec:
+      replicas: ${{COMMON_REPLICAS}}
+      selector:
+        matchLabels:
+          io.move2kube.service: web
+      strategy: {}
+      template:
+        metadata:
+          annotations:
+            move2kube.service.expose: "true"
+          creationTimestamp: null
+          labels:
+            io.move2kube.service: web
+          name: web
+        spec:
+          containers:
+            - env:
+                - name: API_URL
+                  value: http://api:1234/fib
+              image: quay.io/konveyor/fibonacci-web:latest
+              imagePullPolicy: Always
+              name: web
+              ports:
+                - containerPort: 80
+                  protocol: TCP
+              resources: {}
+          restartPolicy: Always
+          securityContext: {}
+    status: {}
+  - apiVersion: networking.k8s.io/v1
+    kind: Ingress
+    metadata:
+      creationTimestamp: null
+      labels:
+        io.move2kube.service: web
+      name: web
+    spec:
+      rules:
+        - http:
+            paths:
+              - backend:
+                  service:
+                    name: web
+                    port:
+                      number: 80
+                path: /
+                pathType: Prefix
+    status:
+      loadBalancer: {}
+  - apiVersion: v1
+    kind: Service
+    metadata:
+      annotations:
+        move2kube.service.expose: "true"
+      creationTimestamp: null
+      labels:
+        io.move2kube.service: web
+      name: web
+    spec:
+      ports:
+        - name: "80"
+          port: 80
+          targetPort: 80
+      selector:
+        io.move2kube.service: web
+      type: ClusterIP
+    status:
+      loadBalancer: {}
+  - apiVersion: apps/v1
+    kind: Deployment
+    metadata:
+      annotations:
+        move2kube.service.expose: "true"
+      creationTimestamp: null
+      labels:
+        io.move2kube.service: api
+      name: api
+    spec:
+      replicas: ${{COMMON_REPLICAS}}
+      selector:
+        matchLabels:
+          io.move2kube.service: api
+      strategy: {}
+      template:
+        metadata:
+          annotations:
+            move2kube.service.expose: "true"
+          creationTimestamp: null
+          labels:
+            io.move2kube.service: api
+          name: api
+        spec:
+          containers:
+            - env:
+                - name: REDIS_URL
+                  value: redis://redis:6379
+              image: quay.io/konveyor/fibonacci-api:latest
+              imagePullPolicy: Always
+              name: api
+              ports:
+                - containerPort: 1234
+                  protocol: TCP
+              resources: {}
+          restartPolicy: Always
+          securityContext: {}
+    status: {}
+parameters:
+  - name: COMMON_REPLICAS
+    value: "2"
