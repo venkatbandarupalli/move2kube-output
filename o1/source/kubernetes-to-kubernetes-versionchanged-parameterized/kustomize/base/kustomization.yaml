@@ -1,8 +1,8 @@
 resources:
+  - web-deployment.yaml
+  - web-ingress.yaml
   - web-service.yaml
   - api-deployment.yaml
   - api-service.yaml
   - redis-deployment.yaml
   - redis-service.yaml
-  - web-deployment.yaml
-  - web-ingress.yaml
