@@ -1,0 +1,21 @@
+patches:
+  - path: apps-v1-deployment-web.yaml
+    target:
+      group: apps
+      version: v1
+      kind: Deployment
+      name: web
+  - path: apps-v1-deployment-api.yaml
+    target:
+      group: apps
+      version: v1
+      kind: Deployment
+      name: api
+  - path: apps-v1-deployment-redis.yaml
+    target:
+      group: apps
+      version: v1
+      kind: Deployment
+      name: redis
+resources:
+  - ../../base
